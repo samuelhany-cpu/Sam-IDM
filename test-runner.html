@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Test Runner - Sam Download Manager</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      margin: 0 0 20px 0;
+      font-size: 32px;
+      text-align: center;
+    }
+    .info {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .console-output {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 20px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+      max-height: 600px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .console-line {
+      margin: 4px 0;
+      line-height: 1.5;
+    }
+    .console-error {
+      color: #ff6b6b;
+    }
+    .console-success {
+      color: #51cf66;
+    }
+    .console-info {
+      color: #74c0fc;
+    }
+    .button-group {
+      text-align: center;
+      margin: 20px 0;
+    }
+    button {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid white;
+      padding: 12px 30px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 0 10px;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: white;
+      color: #667eea;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Test Runner - Sam Download Manager</h1>
+    
+    <div class="info">
+      <p><strong>Automated Test Suite</strong></p>
+      <p>This will add 50 test downloads with various file types and sizes to thoroughly test your download manager.</p>
+      <ul>
+        <li>Test files include: Images, Videos, Audio, Documents, Archives, JSON, XML, CSV, PDFs</li>
+        <li>File sizes range from tiny (< 100 KB) to large (< 50 MB)</li>
+        <li>Tests multi-threading, resume capability, categorization, and error handling</li>
+      </ul>
+    </div>
+
+    <div class="button-group">
+      <button onclick="startTests()">Start Test Suite</button>
+      <button onclick="clearConsole()">Clear Console</button>
+      <button onclick="openDownloadsFolder()">Open Downloads Folder</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Tests</div>
+        <div class="stat-value" id="stat-total">50</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value" id="stat-progress">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value" id="stat-completed">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value" id="stat-failed">0</div>
+      </div>
+    </div>
+
+    <div class="console-output" id="console"></div>
+  </div>
+
+  <script>
+    let testRunning = false;
+
+    function addToConsole(message, type = 'info') {
+      const consoleDiv = document.getElementById('console');
+      const line = document.createElement('div');
+      line.className = `console-line console-${type}`;
+      line.textContent = message;
+      consoleDiv.appendChild(line);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    function clearConsole() {
+      document.getElementById('console').innerHTML = '';
+    }
+
+    function updateStats(progress, completed, failed) {
+      document.getElementById('stat-progress').textContent = progress;
+      document.getElementById('stat-completed').textContent = completed;
+      document.getElementById('stat-failed').textContent = failed;
+    }
+
+    async function openDownloadsFolder() {
+      try {
+        const settings = await window.electronAPI.getSettings();
+        await window.electronAPI.openFolderPath(settings.downloadFolder);
+      } catch (error) {
+        addToConsole(`Error opening downloads folder: ${error.message}`, 'error');
+      }
+    }
+
+    // Override console.log to capture output
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      const message = args.join(' ');
+      if (message.includes('✗') || message.includes('Failed')) {
+        addToConsole(message, 'error');
+      } else if (message.includes('✓') || message.includes('Completed') || message.includes('Success')) {
+        addToConsole(message, 'success');
+      } else {
+        addToConsole(message, 'info');
+      }
+    };
+
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      addToConsole(args.join(' '), 'error');
+    };
+
+    async function startTests() {
+      if (testRunning) {
+        addToConsole('Test suite is already running!', 'error');
+        return;
+      }
+
+      testRunning = true;
+      clearConsole();
+      updateStats(0, 0, 0);
+
+      // Load and run the test suite
+      const script = document.createElement('script');
+      script.src = 'test-suite.js';
+      document.body.appendChild(script);
+      
+      // Load detailed monitor after 10 seconds
+      setTimeout(() => {
+        const monitorScript = document.createElement('script');
+        monitorScript.src = 'monitor.js';
+        document.body.appendChild(monitorScript);
+      }, 10000);
+
+      // Monitor stats
+      const statsInterval = setInterval(async () => {
+        try {
+          const downloads = await window.electronAPI.getAllDownloads();
+          const stats = {
+            downloading: downloads.filter(d => d.status === 'downloading').length,
+            completed: downloads.filter(d => d.status === 'completed').length,
+            error: downloads.filter(d => d.status === 'error').length,
+            waiting: downloads.filter(d => d.status === 'waiting').length,
+          };
+
+          updateStats(
+            stats.downloading + stats.waiting,
+            stats.completed,
+            stats.error
+          );
+
+          if (stats.completed + stats.error >= 50) {
+            clearInterval(statsInterval);
+            testRunning = false;
+          }
+        } catch (error) {
+          // Ignore errors during monitoring
+        }
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
