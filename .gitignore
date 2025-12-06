@@ -1,11 +1,12 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build output
 dist/
 release/
 out/
+*.exe
+*.zip
 
 # Logs
 *.log
@@ -29,3 +30,7 @@ config.json
 # Environment
 .env
 .env.local
+
+# Temporary files
+*.tmp
+*.temp
