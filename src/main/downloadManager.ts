@@ -519,6 +519,9 @@ export class DownloadManager extends EventEmitter {
         let lastThrottle = Date.now();
         let bytesInInterval = 0;
 
+        let progressLastUpdate = Date.now();
+        let progressLastDownloaded = 0;
+
         response.on('data', (chunk: Buffer) => {
           if (download.status !== 'downloading') {
             request.destroy();
@@ -553,6 +556,25 @@ export class DownloadManager extends EventEmitter {
           }
 
           segment.downloaded += chunk.length;
+
+          // Emit progress updates every 200ms
+          const now = Date.now();
+          if (now - progressLastUpdate >= 200) {
+            download.downloadedSize = download.segments.reduce((sum, s) => sum + s.downloaded, 0);
+            download.progress = (download.downloadedSize / download.fileSize) * 100;
+
+            const timeDiff = (now - progressLastUpdate) / 1000;
+            const sizeDiff = download.downloadedSize - progressLastDownloaded;
+            download.speed = sizeDiff / timeDiff;
+            download.timeRemaining = download.speed > 0 
+              ? (download.fileSize - download.downloadedSize) / download.speed 
+              : 0;
+
+            progressLastUpdate = now;
+            progressLastDownloaded = download.downloadedSize;
+
+            this.emit('progress', download);
+          }
         });
 
         response.on('end', () => {
