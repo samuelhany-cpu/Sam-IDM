@@ -137,7 +137,7 @@ function startBrowserIntegrationServer() {
       req.on('end', () => {
         try {
           const data = JSON.parse(body);
-          const { url, filename, referrer } = data;
+          const { url, filename } = data;
 
           // Show the main window
           if (mainWindow) {

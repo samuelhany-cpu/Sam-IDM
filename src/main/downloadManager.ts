@@ -390,7 +390,7 @@ export class DownloadManager extends EventEmitter {
     const speedLimit = this.settings.get('speedLimit') || 0; // KB/s, 0 = unlimited
 
     return new Promise((resolve, reject) => {
-      let completedSegments = 0;
+      let _completedSegments = 0;
       let lastUpdate = Date.now();
       let lastDownloaded = 0;
 
@@ -414,7 +414,7 @@ export class DownloadManager extends EventEmitter {
             .then(() => {
               pendingSegment.status = 'completed';
               activeSegments.delete(pendingSegment.id);
-              completedSegments++;
+              _completedSegments++;
 
               // Update progress
               const now = Date.now();

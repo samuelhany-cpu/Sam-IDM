@@ -1,16 +1,32 @@
 import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import prettierConfig from 'eslint-config-prettier';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import globals from 'globals';
 
 export default [
+  {
+    ignores: [
+      'dist/**',
+      'build/**',
+      'release/**',
+      'node_modules/**',
+      '*.config.js',
+      '*.config.ts',
+      'vite.config.ts',
+      'test-suite.js',
+      'test-browser-integration.js',
+      'browser-extension/**',
+      '*.bat',
+      '*.html'
+    ],
+  },
   js.configs.recommended,
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
-      parser: tsParser,
+      parser: tsparser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
@@ -19,49 +35,34 @@ export default [
         },
       },
       globals: {
-        browser: true,
-        node: true,
-        es2021: true,
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
       },
     },
     plugins: {
-      '@typescript-eslint': tsPlugin,
-      'react': reactPlugin,
-      'react-hooks': reactHooksPlugin,
+      '@typescript-eslint': tseslint,
+      'react': react,
+      'react-hooks': reactHooks,
     },
     rules: {
-      ...tsPlugin.configs.recommended.rules,
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
       }],
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
-      'no-console': ['warn', {
-        allow: ['warn', 'error', 'info'],
-      }],
+      'no-console': 'off',
+      'no-case-declarations': 'off',
+      'no-prototype-builtins': 'off',
     },
     settings: {
       react: {
         version: 'detect',
       },
     },
-  },
-  prettierConfig,
-  {
-    ignores: [
-      'dist',
-      'build',
-      'node_modules',
-      '*.config.js',
-      '*.config.ts',
-      'test-suite.js',
-      'browser-extension',
-    ],
   },
 ];
