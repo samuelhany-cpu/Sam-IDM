@@ -36,8 +36,11 @@ interface Window {
     getSettings: (key?: string) => Promise<any>;
     setSetting: (key: string, value: any) => Promise<void>;
     selectFolder: () => Promise<string | null>;
+    toggleClipboardMonitor: (enabled: boolean) => Promise<any>;
+    getCaptureStatus: () => Promise<any>;
     onDownloadProgress: (callback: (download: any) => void) => void;
     onDownloadCompleted: (callback: (download: any) => void) => void;
     onDownloadError: (callback: (data: any) => void) => void;
+    onUrlCaptured: (callback: (data: { url: string; method: string }) => void) => void;
   };
 }

@@ -41,6 +41,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // File system operations
   openFolderPath: (path: string) => ipcRenderer.invoke('fs:openFolder', path),
 
+  // Capture methods
+  toggleClipboardMonitor: (enabled: boolean) =>
+    ipcRenderer.invoke('capture:toggle-clipboard', enabled),
+  getCaptureStatus: () => ipcRenderer.invoke('capture:get-status'),
+  onUrlCaptured: (callback: (data: { url: string; method: string }) => void) => {
+    ipcRenderer.on('url-captured', (_, data) => callback(data));
+  },
+
   // Event listeners
   onDownloadProgress: (callback: (download: any) => void) => {
     ipcRenderer.on('download:progress', (_, download) => callback(download));

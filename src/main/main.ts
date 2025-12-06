@@ -5,12 +5,14 @@ import * as http from 'http';
 import { DownloadManager } from './downloadManager';
 import { SchedulerManager } from './scheduler';
 import { SettingsManager } from './settings';
+import { CaptureManager } from './captureManager';
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let downloadManager: DownloadManager;
 let schedulerManager: SchedulerManager;
 let settingsManager: SettingsManager;
+let captureManager: CaptureManager;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -211,9 +213,15 @@ app.whenReady().then(() => {
   settingsManager = new SettingsManager();
   downloadManager = new DownloadManager(settingsManager);
   schedulerManager = new SchedulerManager(downloadManager, settingsManager);
+  captureManager = new CaptureManager();
 
   createWindow();
   createTray();
+
+  // Set capture manager window reference
+  if (mainWindow) {
+    captureManager.setMainWindow(mainWindow);
+  }
 
   // Set up IPC handlers
   setupIpcHandlers();
@@ -345,6 +353,20 @@ function setupIpcHandlers() {
   // File system operations
   ipcMain.handle('fs:openFolder', async (_, folderPath: string) => {
     return shell.openPath(folderPath);
+  });
+
+  // Capture methods
+  ipcMain.handle('capture:toggle-clipboard', async (_, enabled: boolean) => {
+    if (enabled) {
+      captureManager.startClipboardMonitor();
+    } else {
+      captureManager.stopClipboardMonitor();
+    }
+    return { success: true };
+  });
+
+  ipcMain.handle('capture:get-status', async () => {
+    return captureManager.getStats();
   });
 
   // Listen for download progress updates

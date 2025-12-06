@@ -66,8 +66,40 @@ function App() {
       });
     });
 
+    // Listen for captured URLs from clipboard monitor
+    window.electronAPI.onUrlCaptured((data: { url: string; method: string }) => {
+      // Automatically add captured URLs
+      window.electronAPI.addDownload(data.url);
+    });
+
+    // Set up drag & drop handlers
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Try to get URL from different data types
+      const url =
+        e.dataTransfer?.getData('text/uri-list') ||
+        e.dataTransfer?.getData('text/plain') ||
+        e.dataTransfer?.getData('text/html');
+
+      if (url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('ftp://'))) {
+        window.electronAPI.addDownload(url);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    document.addEventListener('drop', handleDrop);
+    document.addEventListener('dragover', handleDragOver);
+
     return () => {
       clearInterval(refreshInterval);
+      document.removeEventListener('drop', handleDrop);
+      document.removeEventListener('dragover', handleDragOver);
     };
   }, []);
 
