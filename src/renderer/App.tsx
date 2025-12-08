@@ -168,6 +168,7 @@ function App() {
     <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
       <Toolbar
         onAddDownload={() => setShowAddDialog(true)}
+        onAddMedia={() => setShowAddDialog(true)}
         onStartAll={() => window.electronAPI.startAllDownloads()}
         onPauseAll={() => window.electronAPI.pauseAllDownloads()}
         onSettings={() => setShowSettings(true)}

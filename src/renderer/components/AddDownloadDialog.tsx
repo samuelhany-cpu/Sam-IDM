@@ -13,6 +13,10 @@ const AddDownloadDialog: React.FC<Props> = ({ onClose, onAdd, onAddBatch }) => {
   const [fileName, setFileName] = useState('');
   const [folder, setFolder] = useState('');
   const [mode, setMode] = useState<'single' | 'batch'>('single');
+  const [isMediaUrl, setIsMediaUrl] = useState(false);
+  const [videoQuality, setVideoQuality] = useState('best');
+  const [audioFormat, setAudioFormat] = useState('mp3');
+  const [extractAudio, setExtractAudio] = useState(false);
 
   const handleSelectFolder = async () => {
     const selectedFolder = await window.electronAPI.selectFolder();
@@ -21,12 +25,37 @@ const AddDownloadDialog: React.FC<Props> = ({ onClose, onAdd, onAddBatch }) => {
     }
   };
 
+  const detectMediaUrl = (urlString: string) => {
+    const mediaPattern = /youtube\.com|youtu\.be|tiktok\.com|instagram\.com|spotify\.com|anghami\.com/i;
+    return mediaPattern.test(urlString);
+  };
+
+  const handleUrlChange = (value: string) => {
+    setUrl(value);
+    setIsMediaUrl(detectMediaUrl(value));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (mode === 'single') {
       if (url.trim()) {
-        onAdd(url, { fileName: fileName || undefined, folder: folder || undefined });
+        const options: any = { 
+          fileName: fileName || undefined, 
+          folder: folder || undefined 
+        };
+        
+        // Add media-specific options if it's a media URL
+        if (isMediaUrl) {
+          if (extractAudio) {
+            options.audio = true;
+            options.audioFormat = audioFormat;
+          } else {
+            options.format = videoQuality === 'best' ? 'bestvideo+bestaudio/best' : videoQuality;
+          }
+        }
+        
+        onAdd(url, options);
       }
     } else {
       const urlList = urls
@@ -69,21 +98,64 @@ const AddDownloadDialog: React.FC<Props> = ({ onClose, onAdd, onAddBatch }) => {
                 <input
                   type="text"
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://example.com/file.zip"
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  placeholder="https://example.com/file.zip or YouTube/TikTok/Instagram/Spotify link"
                   required
                   autoFocus
                 />
               </div>
-              <div className="form-group">
-                <label>File Name (Optional)</label>
-                <input
-                  type="text"
-                  value={fileName}
-                  onChange={(e) => setFileName(e.target.value)}
-                  placeholder="Auto-detect from URL"
-                />
-              </div>
+              
+              {isMediaUrl && (
+                <>
+                  <div className="form-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={extractAudio}
+                        onChange={(e) => setExtractAudio(e.target.checked)}
+                      />
+                      {' '}Extract Audio Only
+                    </label>
+                  </div>
+                  
+                  {extractAudio ? (
+                    <div className="form-group">
+                      <label>Audio Format</label>
+                      <select value={audioFormat} onChange={(e) => setAudioFormat(e.target.value)}>
+                        <option value="mp3">MP3</option>
+                        <option value="m4a">M4A</option>
+                        <option value="wav">WAV</option>
+                        <option value="flac">FLAC</option>
+                        <option value="opus">OPUS</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label>Video Quality</label>
+                      <select value={videoQuality} onChange={(e) => setVideoQuality(e.target.value)}>
+                        <option value="best">Best Quality (Video+Audio)</option>
+                        <option value="bestvideo">Best Video Only</option>
+                        <option value="1080p">1080p</option>
+                        <option value="720p">720p</option>
+                        <option value="480p">480p</option>
+                        <option value="360p">360p</option>
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {!isMediaUrl && (
+                <div className="form-group">
+                  <label>File Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={fileName}
+                    onChange={(e) => setFileName(e.target.value)}
+                    placeholder="Auto-detect from URL"
+                  />
+                </div>
+              )}
             </>
           ) : (
             <div className="form-group">

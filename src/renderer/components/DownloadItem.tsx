@@ -21,7 +21,8 @@ const DownloadItem: React.FC<Props> = ({ download, isSelected, onSelect }) => {
   };
 
   const handleRemove = async () => {
-    if (confirm(`Are you sure you want to remove "${download.filename}"?`)) {
+    const name = download.fileName || download.filename || download.url || 'download';
+    if (confirm(`Are you sure you want to remove "${name}"?`)) {
       await window.electronAPI.removeDownload(download.id);
       // Force a reload by dispatching a custom event
       window.dispatchEvent(new CustomEvent('download-removed'));

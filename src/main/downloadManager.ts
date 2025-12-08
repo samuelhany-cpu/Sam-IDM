@@ -289,6 +289,63 @@ export class DownloadManager extends EventEmitter {
     return downloads;
   }
 
+  /**
+   * Register a file that was downloaded externally (e.g., via yt-dlp) as a completed download
+   */
+  async addCompletedDownload(
+    filePath: string,
+    sourceUrl?: string,
+    options?: { category?: string; folder?: string }
+  ): Promise<Download> {
+    const id = this.generateId();
+    const fileName = path.basename(filePath);
+    const category = options?.category || this.detectCategory(fileName);
+    const folder = options?.folder || this.getCategoryFolder(category);
+
+    let fileSize = 0;
+    try {
+      const stat = fs.statSync(filePath);
+      fileSize = stat.size;
+    } catch {
+      // file may not exist or accessible
+      fileSize = 0;
+    }
+
+    const download: Download = {
+      id,
+      url: sourceUrl || filePath,
+      fileName,
+      filePath: path.join(folder, fileName),
+      fileSize,
+      downloadedSize: fileSize,
+      status: 'completed',
+      progress: fileSize > 0 ? 100 : 0,
+      speed: 0,
+      timeRemaining: 0,
+      segments: [],
+      category,
+      createdAt: Date.now(),
+      completedAt: Date.now(),
+      resumable: false,
+    };
+
+    // If the downloaded file is not already in the category folder, move it
+    try {
+      const destDir = path.dirname(download.filePath);
+      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+      if (path.resolve(filePath) !== path.resolve(download.filePath)) {
+        fs.copyFileSync(filePath, download.filePath);
+      }
+    } catch (_err) {
+      console.error('Failed to move/copy downloaded file:', _err);
+    }
+
+    this.downloads.set(id, download);
+    this.saveDownloads();
+    this.emit('completed', download);
+    return download;
+  }
+
   private async startDownload(id: string): Promise<void> {
     const download = this.downloads.get(id);
     if (!download || download.status === 'completed') return;

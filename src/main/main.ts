@@ -6,6 +6,7 @@ import { DownloadManager } from './downloadManager';
 import { SchedulerManager } from './scheduler';
 import { SettingsManager } from './settings';
 import { CaptureManager } from './captureManager';
+const ytdlp: any = require('yt-dlp-exec');
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -245,6 +246,57 @@ app.on('window-all-closed', () => {
 function setupIpcHandlers() {
   // Download operations
   ipcMain.handle('download:add', async (_, url: string, options?: any) => {
+    // Detect media platforms that are better handled by yt-dlp
+    const mediaPattern = /youtube\.com|youtu\.be|tiktok\.com|instagram\.com|spotify\.com|anghami\.com/i;
+    if (mediaPattern.test(url)) {
+      // Determine target folder from category (video/music)
+      try {
+  const isAudioRequest = options?.audio === true || /spotify\.com|anghami\.com/i.test(url);
+  const category = isAudioRequest ? 'music' : 'video';
+  // Map category id to folder name used in the app
+  const categoryFolderName = category === 'music' ? 'Music' : 'Video';
+  const baseDownloadFolder = settingsManager.get('downloadFolder');
+  const outFolder = path.join(baseDownloadFolder, categoryFolderName);
+
+  // Ensure folder exists
+  if (!fs.existsSync(outFolder)) fs.mkdirSync(outFolder, { recursive: true });
+
+        // Build output template
+        const outputTemplate = path.join(outFolder, '%(title)s.%(ext)s');
+
+        // Prepare arguments
+        const ytdlpOptions: any = {
+          output: outputTemplate,
+          noPlaylist: true,
+        };
+        if (isAudioRequest) {
+          ytdlpOptions.extractAudio = true;
+          ytdlpOptions.audioFormat = options?.audioFormat || 'mp3';
+        } else {
+          ytdlpOptions.format = options?.format || 'bestvideo+bestaudio/best';
+        }
+
+        // Run yt-dlp
+        await ytdlp(url, ytdlpOptions);
+
+        // Find the newest file in outFolder
+        const files = fs.readdirSync(outFolder).map((f) => ({
+          name: f,
+          time: fs.statSync(path.join(outFolder, f)).mtimeMs,
+        }));
+        files.sort((a, b) => b.time - a.time);
+        if (files.length > 0) {
+          const downloadedFile = path.join(outFolder, files[0].name);
+          // Register as completed download
+          return await downloadManager.addCompletedDownload(downloadedFile, url, { category, folder: outFolder });
+        }
+        // Fallback to normal addDownload
+      } catch (e: any) {
+        console.error('yt-dlp download failed:', e);
+        // Fall through to normal HTTP download handling
+      }
+    }
+
     return await downloadManager.addDownload(url, options);
   });
 

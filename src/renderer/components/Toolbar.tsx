@@ -3,6 +3,7 @@ import '../styles/Toolbar.css';
 
 interface Props {
   onAddDownload: () => void;
+  onAddMedia: () => void;
   onStartAll: () => void;
   onPauseAll: () => void;
   onSettings: () => void;
@@ -20,6 +21,7 @@ interface Props {
 
 const Toolbar: React.FC<Props> = ({
   onAddDownload,
+  onAddMedia,
   onStartAll,
   onPauseAll,
   onSettings,
@@ -39,6 +41,9 @@ const Toolbar: React.FC<Props> = ({
       <div className="toolbar-left">
         <button onClick={onAddDownload} className="btn-primary">
           + Add Download
+        </button>
+        <button onClick={onAddMedia} className="btn-primary" title="Download from YouTube, TikTok, Instagram, Spotify, etc.">
+          🎬 Download Media
         </button>
         <button onClick={onStartAll} className="btn-secondary">
           Start All
